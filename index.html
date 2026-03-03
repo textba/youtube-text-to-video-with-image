@@ -186,9 +186,18 @@
             resultsContainer.style.display = 'none';
             videoGrid.innerHTML = '';
 
-            try {
-                const introImageData = await buildIntroImageData(introImageFiles);
-                const payload = { text, voiceId, resolution, formats, youtubeTitle, youtubeDescription, introImageData };
+            try {                const introImageData = await buildIntroImageData(introImageFiles);
+                const orderedIntroImages = Array.from(introImageFiles).sort((a, b) => {
+                    const aNum = extractOrderNumber(a.name);
+                    const bNum = extractOrderNumber(b.name);
+                    if (aNum !== bNum) return aNum - bNum;
+                    return (a.name || "").localeCompare(b.name || "");
+                });
+                const introImagesData = [];
+                for (const f of orderedIntroImages) {
+                    introImagesData.push({ name: f.name, dataUrl: await fileToDataUrl(f) });
+                }
+                const payload = { text, voiceId, resolution, formats, youtubeTitle, youtubeDescription, introImageData, introImagesData };
                 let response = await fetch('/api/generate-video', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
