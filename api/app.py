@@ -287,26 +287,32 @@ def api_generate_video():
     intro_image_data = data.get('introImageData')
     tld = ACCENTS.get(accent_key, 'com')
 
-    format_map_1080p = {
-        "portrait_tiktok": (1080, 1920),
-        "landscape_720p": (1920, 1080),
-        "square_instagram": (1080, 1080)
+    resolution = str(data.get('resolution', '1080p')).lower()
+
+    format_maps = {
+        "720p": {
+            "portrait_tiktok": (720, 1280),
+            "landscape_720p": (1280, 720),
+            "square_instagram": (720, 720)
+        },
+        "1080p": {
+            "portrait_tiktok": (1080, 1920),
+            "landscape_720p": (1920, 1080),
+            "square_instagram": (1080, 1080)
+        },
+        "2k": {
+            "portrait_tiktok": (1440, 2560),
+            "landscape_720p": (2560, 1440),
+            "square_instagram": (1440, 1440)
+        },
+        "4k": {
+            "portrait_tiktok": (2160, 3840),
+            "landscape_720p": (3840, 2160),
+            "square_instagram": (2160, 2160)
+        }
     }
-    format_map_720p = {
-        "portrait_tiktok": (720, 1280),
-        "landscape_720p": (1280, 720),
-        "square_instagram": (720, 720)
-    }
-    
-    # Use 1080p when it's available
-    format_map = format_map_1080p
-    format_map_1080p = {
-        "portrait_tiktok": (1080, 1920),
-        "landscape_720p": (1920, 1080),
-        "square_instagram": (1080, 1080)
-    }
-    # Always render in 1080p
-    format_map = format_map_1080p
+
+    format_map = format_maps.get(resolution, format_maps["1080p"])
     requested_formats = data.get('formats', ['portrait_tiktok'])
     if not isinstance(requested_formats, list):
         requested_formats = ['portrait_tiktok']

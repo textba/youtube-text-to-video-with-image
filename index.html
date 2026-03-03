@@ -47,8 +47,8 @@
         <div class="format-options">
             <strong>Video formats:</strong>
             <label><input type="checkbox" class="format-checkbox" value="portrait_tiktok" checked> Portrait (YouTube Short 9:16)</label>
-            <label><input type="checkbox" class="format-checkbox" value="landscape_720p"> Landscape (720p 16:9)</label>
-            <label><input type="checkbox" class="format-checkbox" value="square_instagram"> Square (720p 1:1)</label>
+            <label><input type="checkbox" class="format-checkbox" value="landscape_720p"> Landscape (16:9)</label>
+            <label><input type="checkbox" class="format-checkbox" value="square_instagram"> Square (1:1)</label>
             <!-- Upload options shown after render -->
         </div>
 
@@ -58,7 +58,12 @@
                 <option value="ErXwobaYiN019PkySvjV">Antoni</option>
                 <option value="nPczCjzI2devNBz1zQrb" selected>Brian</option>
             </select>
-            <!-- Accent selector removed -->
+            <select id="resolution-select">
+                <option value="720p">720p</option>
+                <option value="1080p" selected>1080p</option>
+                <option value="2k">2K</option>
+                <option value="4k">4K</option>
+            </select>            <!-- Accent selector removed -->
             <button id="video-btn">Create Multi-Format Videos</button>
             <span id="status"></span>
         </div>
@@ -75,6 +80,7 @@
         const textInput = document.getElementById('text-input');
         const introImageInput = document.getElementById('intro-image-input');
         const voiceSelect = document.getElementById('voice-select');
+        const resolutionSelect = document.getElementById('resolution-select');
         const videoBtn = document.getElementById('video-btn');
         const formatCheckboxes = document.querySelectorAll('.format-checkbox');
         // Upload checkboxes removed — upload happens post-render
@@ -155,13 +161,14 @@
             const youtubeDescription = descriptionInput.value.trim();
             const voiceId = voiceSelect.value;
             const voiceName = voiceSelect.options[voiceSelect.selectedIndex].text;
+            const resolution = resolutionSelect.value;
             const formats = Array.from(formatCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
             const introImageFiles = introImageInput.files ? Array.from(introImageInput.files) : [];
             if (!text) return alert("No text to convert.");
             if (!formats.length) return alert("Select at least one video format.");
             if (introImageFiles.length > 10) return alert("Please upload up to 10 images.");
             
-            status.textContent = `Creating ${formats.length} video format(s) with ${voiceName} voice...`;
+            status.textContent = `Creating ${formats.length} video format(s) at ${resolution} with ${voiceName} voice...`;
             videoBtn.disabled = true;
             resultsContainer.style.display = 'none';
             videoGrid.innerHTML = '';
@@ -171,7 +178,7 @@
                 const response = await fetch('/api/generate-video', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, voiceId, formats, youtubeTitle, youtubeDescription, introImageData })
+                    body: JSON.stringify({ text, voiceId, resolution, formats, youtubeTitle, youtubeDescription, introImageData })
                 });
 
                 if (response.ok) {
