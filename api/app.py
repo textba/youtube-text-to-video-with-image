@@ -285,6 +285,7 @@ def api_generate_video():
     upload_to_tiktok = bool(data.get('uploadToTiktok', False))
     should_upload_to_drive = bool(data.get('uploadToDrive', True))  # Default to True
     intro_image_data = data.get('introImageData')
+    allow_fallback = bool(data.get('allowFallback', False))
     tld = ACCENTS.get(accent_key, 'com')
 
     resolution = str(data.get('resolution', '1080p')).lower()
@@ -332,6 +333,12 @@ def api_generate_video():
         success = generate_elevenlabs_audio(clean_text_for_tts, audio_path, voice_id)
 
         if not success:
+            if not allow_fallback:
+                return jsonify({
+                    "error": "ElevenLabs failed. Do you want to continue with fallback voices (OpenAI/gTTS)?",
+                    "elevenlabsFailed": True,
+                    "canProceedWithoutElevenlabs": True
+                }), 409
             print("Falling back to OpenAI TTS...")
             success = generate_openai_audio(clean_text_for_tts, audio_path)
 

@@ -175,11 +175,30 @@
 
             try {
                 const introImageData = await buildIntroImageData(introImageFiles);
-                const response = await fetch('/api/generate-video', {
+                const payload = { text, voiceId, resolution, formats, youtubeTitle, youtubeDescription, introImageData };
+                let response = await fetch('/api/generate-video', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, voiceId, resolution, formats, youtubeTitle, youtubeDescription, introImageData })
+                    body: JSON.stringify(payload)
                 });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    if (response.status === 409 && err.elevenlabsFailed) {
+                        const proceed = confirm(err.error || 'ElevenLabs failed. Continue with fallback voices?');
+                        if (!proceed) {
+                            status.textContent = 'Stopped. ElevenLabs failed and fallback was not approved.';
+                            return;
+                        }
+                        status.textContent = 'ElevenLabs failed. Continuing with fallback voice...';
+                        payload.allowFallback = true;
+                        response = await fetch('/api/generate-video', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    }
+                }
 
                 if (response.ok) {
                     const data = await response.json();
@@ -201,7 +220,8 @@
                     resultsContainer.style.display = 'block';
                     status.textContent = "Videos ready! Review them and upload when ready.";
                 } else {
-                    status.textContent = "Failed to create videos.";
+                    const err = await response.json().catch(() => ({}));
+                    status.textContent = err.error || "Failed to create videos.";
                 }
             } catch (error) {
                 status.textContent = "Server error.";
