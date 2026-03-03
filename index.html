@@ -134,14 +134,27 @@
             const images = await Promise.all(orderedFiles.map(loadImageFromFile));
             const targetWidth = Math.max(...images.map(i => i.width));
 
-            const resized = images.map(img => {
+            let resized = images.map(img => {
                 const h = Math.round((img.height * targetWidth) / img.width);
                 return { img, w: targetWidth, h };
             });
 
-            const totalHeight = resized.reduce((sum, x) => sum + x.h, 0);
+            let totalHeight = resized.reduce((sum, x) => sum + x.h, 0);
+
+            // Browser canvases have max size limits. If too tall, scale down to avoid truncation.
+            const MAX_CANVAS_HEIGHT = 32000;
+            if (totalHeight > MAX_CANVAS_HEIGHT) {
+                const scale = MAX_CANVAS_HEIGHT / totalHeight;
+                resized = resized.map(r => ({
+                    ...r,
+                    w: Math.max(1, Math.floor(r.w * scale)),
+                    h: Math.max(1, Math.floor(r.h * scale))
+                }));
+                totalHeight = resized.reduce((sum, x) => sum + x.h, 0);
+            }
+
             const canvas = document.createElement('canvas');
-            canvas.width = targetWidth;
+            canvas.width = resized[0].w;
             canvas.height = totalHeight;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#000';
