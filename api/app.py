@@ -1,4 +1,4 @@
-﻿import requests
+import requests
 from bs4 import BeautifulSoup
 from gtts import gTTS
 import os
@@ -12,7 +12,6 @@ from flask_cors import CORS
 from moviepy import AudioFileClip, VideoClip, ImageClip, concatenate_videoclips
 from dotenv import load_dotenv
 from youtube_uploader import upload_video
-from tiktok_uploader import upload_video_to_tiktok
 from drive_uploader import upload_to_drive
 
 app = Flask(__name__, static_folder='../', static_url_path='')
@@ -366,14 +365,14 @@ def api_generate_video():
                     scaled_h = int(src_h * scale)
 
                     if scaled_h <= h:
-                        # Image fits or is shorter than target â€” just fit/pad it
+                        # Image fits or is shorter than target — just fit/pad it
                         intro_fit_path = os.path.join(app.static_folder, f"intro_{name}_{timestamp}.png")
                         fitted = ImageOps.fit(src_img, (w, h), method=Image.Resampling.LANCZOS)
                         fitted.save(intro_fit_path)
                         image_clip = ImageClip(intro_fit_path, duration=duration).with_audio(audio)
                         final_video = image_clip
                     else:
-                        # Image is taller than target â€” scroll from top to bottom
+                        # Image is taller than target — scroll from top to bottom
                         scaled_img = src_img.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS)
                         intro_fit_path = os.path.join(app.static_folder, f"intro_{name}_{timestamp}.png")
                         scaled_img.save(intro_fit_path)
@@ -395,7 +394,7 @@ def api_generate_video():
             final_video.write_videofile(output_path, fps=8, codec="libx264", audio_codec="aac", preset="ultrafast")
             
             # Proactively send to Telegram
-            send_to_telegram(output_path, f"ðŸŽ¬ Render Complete (V3): {name}")
+            send_to_telegram(output_path, f"🎬 Render Complete (V3): {name}")
 
             outputs.append({"type": name, "url": "/" + filename, "filename": filename})
         
@@ -416,7 +415,7 @@ def api_generate_video():
 def api_upload_video():
     data = request.json or {}
     filename = data.get('filename', '')
-    targets = data.get('targets', [])  # list of "youtube", "drive", "tiktok"
+    targets = data.get('targets', [])  # list of "youtube", "drive"
     title = (data.get('title') or YOUTUBE_TITLE_PREFIX).strip()
     description = (data.get('description') or YOUTUBE_DESCRIPTION).strip()
 
@@ -490,14 +489,6 @@ def api_upload_video():
                     print(traceback.format_exc())
                 results["youtubeError"] = str(e)
 
-    if "tiktok" in targets:
-        try:
-            result = upload_video_to_tiktok(file_path, title=title, description=description)
-            results["tiktokStatus"] = result.get("status", "unknown")
-        except Exception as e:
-            if DEBUG_UPLOADS:
-                print(traceback.format_exc())
-            results["tiktokError"] = str(e)
 
     if DEBUG_UPLOADS:
         print(f"[UPLOAD DEBUG] response={results}")
