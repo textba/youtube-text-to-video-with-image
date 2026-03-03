@@ -1,0 +1,13 @@
+Flask
+flask-cors
+requests
+beautifulsoup4
+gTTS
+numpy
+Pillow
+moviepy
+python-dotenv
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+TikTokApi

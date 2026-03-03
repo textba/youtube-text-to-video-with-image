@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment/secrets
+.env
+client_secret.json
+youtube_token.json
+drive_token.pickle
+
+# Generated media/artifacts
+*.mp3
+*.mp4
+intro_*.png
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
