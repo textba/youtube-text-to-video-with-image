@@ -4,6 +4,7 @@ from gtts import gTTS
 import os
 import time
 import base64
+import io
 import traceback
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -136,6 +137,46 @@ def decode_intro_image(intro_image_data: str, timestamp: int):
         print(f"Failed to decode intro image: {e}")
         return None
 
+
+
+def decode_and_stitch_intro_images(intro_images_data, timestamp: int):
+    if not isinstance(intro_images_data, list) or len(intro_images_data) < 2:
+        return None
+    try:
+        pil_images = []
+        for item in intro_images_data:
+            if not isinstance(item, dict):
+                continue
+            data_url = item.get("dataUrl") or item.get("data")
+            if not data_url or not isinstance(data_url, str):
+                continue
+            encoded = data_url.split(',', 1)[1] if ',' in data_url else data_url
+            img_bytes = base64.b64decode(encoded)
+            img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+            pil_images.append(img)
+
+        if len(pil_images) < 2:
+            return None
+
+        target_width = max(img.width for img in pil_images)
+        resized = []
+        for img in pil_images:
+            new_h = max(1, int(img.height * (target_width / img.width)))
+            resized.append(img.resize((target_width, new_h), Image.Resampling.LANCZOS))
+
+        total_height = sum(img.height for img in resized)
+        stitched = Image.new('RGB', (target_width, total_height), (0, 0, 0))
+        y = 0
+        for img in resized:
+            stitched.paste(img, (0, y))
+            y += img.height
+
+        out_path = os.path.join(app.static_folder, f"intro_{timestamp}.png")
+        stitched.save(out_path)
+        return out_path
+    except Exception as e:
+        print(f"Failed to stitch intro images: {e}")
+        return None
 
 def choose_font_size_from_word_count(raw_text: str) -> int:
     words = max(1, len((raw_text or '').split()))
@@ -325,7 +366,7 @@ def api_generate_video():
     
     timestamp = int(time.time())
     audio_path = f"audio_{timestamp}.mp3"
-    intro_image_path = decode_intro_image(intro_image_data, timestamp)
+    intro_image_path = decode_and_stitch_intro_images(intro_images_data, timestamp) or decode_intro_image(intro_image_data, timestamp)
 
     try:
         # Try ElevenLabs (selected voice) first, then OpenAI, then gTTS
